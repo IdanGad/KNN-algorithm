@@ -1,0 +1,250 @@
+from sklearn import datasets 
+import numpy as np
+import math
+
+
+dataSet = datasets.load_iris()
+data = dataSet.data
+targets = dataSet.target
+perm = np.random.permutation(len(data))
+trainRows = int(0.8*len(data));
+trainingSet = data[perm][0:trainRows]
+trainingTargets = targets[perm][0:trainRows]
+testSet = data[perm][trainRows:]
+testTargets =  targets[perm][trainRows:]
+print(set(targets))
+print(dataSet.target_names)
+
+testSetToVec = np.array(testSet)
+
+
+#print("trainingSet:\n\n",trainingSet,"\n")
+
+# printing to check if the variables are like I want
+npTrainingSet = np.array(trainingSet)
+print("testSet as np array:\n\n",npTrainingSet,"\n")
+miniValuesInColsnpTrainingSet = np.min(npTrainingSet,axis = 0)
+maxiValuesInColsnpTrainingSet = np.max(npTrainingSet,axis = 0)
+print("mini val:\n",miniValuesInColsnpTrainingSet,"\n")
+print("maxi val:\n",maxiValuesInColsnpTrainingSet,"\n")
+
+# Q1 - investigating the arrays
+
+# Q2
+def max_min_Scalling(trainingSet, testSet):
+    # This function normalize the two tables that sent to it with "max min normalization"
+    # 1
+    # mivotras = mini Values of every Col in TrainingSet
+    # mxvotras = maxi Values ....
+    npTrainingSet = np.array(trainingSet) # coping the training set to a numpy array
+    mivotras = np.min(npTrainingSet,axis = 0) # getting the min values 
+    mxvotras = np.max(npTrainingSet,axis = 0) # getting the max values
+    NtrainingSet = (npTrainingSet-mivotras)/(mxvotras-mivotras) 
+    # ^^ calculttion and initilaizinig the table with the normal values
+    print("NtrainingSet:\n\n",NtrainingSet,"\n") # Check for right answers
+    # 2
+    # mivotess = mini Values of every Col in TestSet
+    # mxvotess = maxi Values ...
+    npTestSet = np.array(testSet) #coping the test set to a numpy array
+    mivotess = np.min(npTestSet,axis = 0) # ...
+    mxvotess = np.max(npTestSet,axis = 0) # ...
+    NtestSet = np.array((npTestSet-mivotess)/(mxvotess-mivotess))
+    # ^^ calculttion and initilaizinig the table with the normal values
+    print("NtestSet:\n\n",NtestSet,"\n") # check right answers
+    
+    #testSetToVec = np.array(NtestSet)[0] # trying to catch the first row
+    print("testSetToVec:\n",testSetToVec,"\n")  
+    print ("NtrainingSet:\n",NtrainingSet)  
+    print ("NtestSet:\n",NtestSet)
+    return NtrainingSet,NtestSet
+
+# Run the first method
+#NtrainingSet,NtestSet = max_min_Scalling(trainingSet, testSet)
+#print (NtrainingSet)
+
+
+# Q3
+
+# single sample from the testSet 
+#vec = NtestSet[0]
+#print("vec:\n",vec,"\n")
+#vecNP = np.array(vec)
+
+#firstRow = NtrainingSet[0]
+#print("firstRow:\n",firstRow,"\n")
+#firstRowNP = np.array(firstRow)
+
+def euclidean_distance(NtrainingSet,vecNP):
+    # vecNP is a single vector representing a sample of a flower in "testSet" 
+    # NtrainingSet is the normalized training array
+    distance = [] # "distance" is the distance between every training set to vecNP
+    for i in range(120):
+        tempRow = NtrainingSet[i] # every row in the training set according to i
+        minusArr = tempRow-vecNP # distance calculation
+        minusArrP2 = minusArr**2 # distance calculation
+        sumIt = np.sum(minusArrP2) # distance calculation
+        sq = np.sqrt(sumIt) # distance calculation
+        distance.append(round(sq,6)) # 0.000000
+    distance = np.array(distance) # making distance numpy array type
+    distance = distance.reshape(120,1) # reshaping it to the right order
+    #print(distance)
+    return(distance)
+   
+#distance = euclidean_distance(NtrainingSet,vecNP)
+#print (distance)
+
+def predict(k, distance, trainingTargets):
+    # reshaping "trainingTargets" so it can be attached to "distance"
+    trainingTargets = trainingTargets.reshape(120,1)
+    # connecting every distance with its class
+    tapeIt = np.hstack((trainingTargets,distance)) 
+    print (tapeIt,"\n")    
+    # sorting the array. the KNN always be at the top
+    tapeItSorted = tapeIt[tapeIt[:,1].argsort()]
+    print("the sorted array\n")
+    print(tapeItSorted,"\n")
+    print("Only the K rows I need\n")
+    kRows = tapeItSorted[:k,:] # getting||showing the KNN
+    print(kRows,"\n")
+    print ("the first col of the KNN")
+    firstCol = kRows[:,0]
+    print(firstCol)
+    g= list(firstCol)
+    print("g\n")
+    print(g)
+    zeroCounter = g.count(0.0)
+    oneCounter = g.count(1.0)
+    twoCounter = g.count(2.0)
+    print("zeroCounter",zeroCounter)
+    print("oneCounter",oneCounter)
+    print("twoCounter",twoCounter)
+    Class = 0
+    if zeroCounter==oneCounter==twoCounter:
+        Class = -1
+        print ("Unkown")
+        return Class
+    else:
+       if zeroCounter>oneCounter:
+           if zeroCounter>twoCounter:
+               Class = 0
+               return Class
+           else:
+               Class = 2
+               return Class
+       else:
+           if oneCounter>twoCounter:
+               Class = 1
+               return Class
+           else:
+               Class = 2
+               return Class
+    
+#predict(3, distance, trainingTargets)
+
+def wighted_euclidean_distance(NtrainingSet,vecNP):
+    # This method returns the WHIGHTED DISTANCE
+    # vecNP is a single vector representing a sample of a flower in "testSet" 
+    # NtrainingSet is the normalized training array
+    distance2 = [] # "distance" is the distance between every training set to vecNP
+    for i in range(120):
+        tempRow = NtrainingSet[i] # every row in the training set according to i
+        minusArr = tempRow-vecNP # distance calculation
+        minusArrP2 = minusArr**2 # distance calculation
+        sumIt = np.sum(minusArrP2) # distance calculation
+        sq = 1/(np.sqrt(sumIt)) # wighted distance calculation - 1/dixtance
+        distance2.append(round(sq,6)) # 0.000000
+    distance2 = np.array(distance2) # making distance numpy array type
+    distance2 = distance2.reshape(120,1) # reshaping it to the right order
+    return(distance2)
+
+#distance2 = wighted_euclidean_distance(NtrainingSet,vecNP)
+#print ("\nwighted_euclidean_distance2\n",distance2)
+    
+def weighted_voting(k, distance2, trainingTargets):
+    # reshaping "trainingTargets" so it can be attached to "distance"
+    trainingTargets = trainingTargets.reshape(120,1)
+    # connecting every distance with its class
+    tapeIt2 = np.hstack((trainingTargets,distance2)) 
+    print ("The wighted array with its targets\n")
+    print (tapeIt2,"\n")    
+    # sorting the array. the KNN always be at the top
+    tapeItSorted2 = tapeIt2[tapeIt2[:,1].argsort()]
+    print("the whighted sorted array\n")
+    print(tapeItSorted2,"\n")
+    print("Only the K rows I need\n")
+    kRows2 = tapeItSorted2[120-k:120,:] # getting||showing the whighted KNN
+    print(kRows2,"\n")
+    # initilizing variables for the wighted value
+    zeroSum = 0
+    oneSum = 0
+    twoSum = 0
+    
+    # This for loop will calaulate the sum of each class
+    for i in range(k):
+        if kRows2[i][0]==0:
+            zeroSum=zeroSum+kRows2[i][1]
+        if kRows2[i][0]==1:
+            oneSum=oneSum+kRows2[i][1]
+        if kRows2[i][0]==2:
+            twoSum=twoSum+kRows2[i][1]
+    
+    #print("zeroSum",zeroSum)
+    #print("oneSum",oneSum)
+    #print("twoSum",twoSum)
+    
+    # This IF section determine the class
+    Class = 0
+    if zeroSum==oneSum==twoSum:
+        Class = "Unkown"
+        print ("Unkown")
+        return Class
+    else:
+       if zeroSum>oneSum:
+           if zeroSum>twoSum:
+               Class = 0
+               return Class
+           else:
+               Class = 2
+               return Class
+       else:
+           if oneSum>twoSum:
+               Class = 1
+               return Class
+           else:
+               Class = 2
+               return Class
+           
+#weighted_voting(3, distance2, trainingTargets)   
+
+def successPercent(compareMyCols):
+    length = len(compareMyCols)
+    success = 0
+    for i in range(length):
+        if compareMyCols[i][0]==compareMyCols[i][1]:
+            success = success+1
+    return ((success/length)*100)
+
+
+def main_knn(k): 
+    # first normalize the arrays
+    NtrainingSet,NtestSet = max_min_Scalling(trainingSet, testSet)
+    
+    resultList = [] # list for final classificayion results
+    # This loop will classify each row in testSet
+    for i in range(30):
+        SingleNtestSet = NtestSet[i]
+        distanceForEveryTestSet = euclidean_distance(NtrainingSet,SingleNtestSet)
+        Class = predict(k, distanceForEveryTestSet, trainingTargets)
+        resultList.append(Class)
+        
+    result = np.array(resultList).reshape(30,1) # the final result reshaped  
+    testTargetNP = np.array(testTargets).reshape(30,1) # testTarget reshaped     
+    compare = np.hstack((result,testTargetNP)) # putting the 2 above together   
+    percent = successPercent(compare) # getting the percent success with outter method
+    strn = str(percent)+" %\n" # putting the SP in a suitable string for presentation   
+    print("The Classification Labels for k=",k,"is:\n ",result )
+    print("The Classification Accuracy for k =",k,"is:",strn )
+    
+main_knn(3)
+main_knn(7)
+main_knn(11)
